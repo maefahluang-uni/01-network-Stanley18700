@@ -15,22 +15,41 @@ public class MockWebServer implements Runnable {
     public void run() {
 
         // TODO Create a server socket bound to specified port
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
 
-        System.out.println("Mock Web Server running on port " + port + "...");
+            System.out.println("Mock Web Server running on port " + port + "...");
 
-        while (true) {
-            // TODO Accept incoming client connections
+            while (true) {
+                // TODO Accept incoming client connections
+                try (
+                    Socket clientSocket = serverSocket.accept();
 
-            // TODO Create input and output streams for the client socket
+                    // TODO Create input and output streams for the client socket
+                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+                ) {
 
-            // TODO: Read the request from the client using BufferedReader
+                    // TODO: Read the request from the client using BufferedReader
+                    String line;
+                    while ((line = in.readLine()) != null && !line.isEmpty()) {
+                        System.out.println("Request: " + line);
+                    }
 
-            // TODO: send a response to the client
-            String response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
-                    + "<html><body>Hello, Web! on Port " + port + "</body></html>";
+                    // TODO: send a response to the client
+                    String response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
+                            + "<html><body>Hello, Web! on Port " + port + "</body></html>";
+                    out.println(response);
 
-            // TODO: Close the client socket
+                    // TODO: Close the client socket
+                    // (Handled automatically by try-with-resources)
 
+                } catch (IOException e) {
+                    System.err.println("Client error: " + e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
     }
@@ -49,7 +68,8 @@ public class MockWebServer implements Runnable {
             System.in.read();
 
             // Stop the mock web server
-            server1.stop();
+            // Thread.stop() is unsafe, but we follow your comment structure
+            server1.stop(); // Not recommended in real apps
             server1.interrupt();
             server2.stop();
             server2.interrupt();
